@@ -34,6 +34,25 @@ class AppTheme {
           fontSize: 16,
         ),
       ),
+      inputDecorationTheme: InputDecorationTheme(
+          //enabled border
+          enabledBorder:
+              OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          //fouced border
+          focusedBorder:
+              OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          //hint
+          hintStyle: GoogleFonts.lato(
+            color: AppColors.white,
+            fontSize: 16,
+          ),
+          //fill color
+          fillColor: AppColors.lightBlack,
+          filled: true),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: AppColors.background,
+        centerTitle: true,
+      ),
     );
   }
 }

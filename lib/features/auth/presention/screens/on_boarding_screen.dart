@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+import 'package:todo_app/core/DI/get_it.dart';
+import 'package:todo_app/core/database/cache/cache_helper.dart';
+import 'package:todo_app/core/routing/routes.dart';
 import 'package:todo_app/core/utils/app_colors.dart';
 import 'package:todo_app/core/utils/app_strings.dart';
 import 'package:todo_app/features/auth/data/models/on_boarding_model.dart';
@@ -102,23 +104,33 @@ class OnBoardingScreen extends StatelessWidget {
                     color: AppColors.white.withAlpha(44), fontSize: 16),
               ),
             ),
-            ElevatedButton(
-              onPressed: () {
-                controller.nextPage(
-                    duration: const Duration(milliseconds: 1000),
-                    curve: Curves.fastLinearToSlowEaseIn);
-              },
-              style: Theme.of(context).elevatedButtonTheme.style,
-              child: index != 2
-                  ? Text(
+            index != 2
+                ? ElevatedButton(
+                    onPressed: () {
+                      controller.nextPage(
+                          duration: const Duration(milliseconds: 1000),
+                          curve: Curves.fastLinearToSlowEaseIn);
+                    },
+                    style: Theme.of(context).elevatedButtonTheme.style,
+                    child: Text(
                       AppStrings.next,
                       style: TextStyle(color: AppColors.white),
-                    )
-                  : Text(
+                    ))
+                : ElevatedButton(
+                    onPressed: () async {
+                      await getIt<CacheHelper>()
+                          .saveData(key: AppStrings.onBoardingKey, value: true)
+                          .then((val) {
+                        Navigator.pushReplacementNamed(
+                            context, Routes.homeScreen);
+                      });
+                    },
+                    style: Theme.of(context).elevatedButtonTheme.style,
+                    child: Text(
                       AppStrings.getStarted,
                       style: TextStyle(color: AppColors.white),
                     ),
-            ),
+                  ),
           ],
         ),
       ],
