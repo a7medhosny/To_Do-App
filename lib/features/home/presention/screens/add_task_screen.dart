@@ -19,6 +19,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   final TextEditingController titleController = TextEditingController();
   final TextEditingController noteController = TextEditingController();
   final TextEditingController dateController = TextEditingController();
+  final GlobalKey<FormState> key = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
@@ -26,36 +27,44 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       appBar: _buildAppBar(),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
-        child: BlocBuilder<TaskCubit, TaskState>(
-          builder: (context, state) {
+        child: BlocConsumer<TaskCubit, TaskState>(
+          builder: (BuildContext context, state) {
             final taskCubit = context.read<TaskCubit>();
             return SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _addTaskField(
-                      titleController, AppStrings.tilteHint, AppStrings.tilte),
-                  SizedBox(height: 24),
-                  _addTaskField(
-                      noteController, AppStrings.notehint, AppStrings.note),
-                  SizedBox(height: 24),
-                  _addTaskField(
-                    dateController,
-                    DateFormat.yMd().format(taskCubit.currentDate),
-                    AppStrings.date,
-                    suffixIcon: _buildDatePickerButton(taskCubit),
-                    readOnly: true,
-                  ),
-                  SizedBox(height: 24),
-                  _buildTimeRow(taskCubit),
-                  SizedBox(height: 24),
-                  _buildColorList(taskCubit),
-                  SizedBox(height: 24),
-                  _buildCreateTaskButton(taskCubit)
-                ],
+              child: Form(
+                key: key,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _addTaskField(titleController, AppStrings.tilteHint,
+                        AppStrings.tilte),
+                    SizedBox(height: 24),
+                    _addTaskField(
+                        noteController, AppStrings.notehint, AppStrings.note),
+                    SizedBox(height: 24),
+                    _addTaskField(
+                      dateController,
+                      DateFormat.yMd().format(taskCubit.currentDate),
+                      AppStrings.date,
+                      suffixIcon: _buildDatePickerButton(taskCubit),
+                      readOnly: true,
+                    ),
+                    SizedBox(height: 24),
+                    _buildTimeRow(taskCubit),
+                    SizedBox(height: 24),
+                    _buildColorList(taskCubit),
+                    SizedBox(height: 24),
+                    _buildCreateTaskButton(taskCubit, state)
+                  ],
+                ),
               ),
             );
+          },
+          listener: (BuildContext context, state) {
+            if (state is AddTaskSuccess) {
+              Navigator.pop(context);
+            }
           },
         ),
       ),
@@ -64,11 +73,13 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
   AppBar _buildAppBar() {
     return AppBar(
-      backgroundColor: AppColors.background,
       automaticallyImplyLeading: false,
       leading: IconButton(
         onPressed: () => Navigator.pop(context),
-        icon: Icon(Icons.arrow_back_ios_new_outlined, color: AppColors.white),
+        icon: Icon(Icons.arrow_back_ios_new_outlined,
+            color: BlocProvider.of<TaskCubit>(context).isDark
+                ? AppColors.white
+                : AppColors.background),
       ),
       title: Text(AppStrings.addTask,
           style: Theme.of(context).textTheme.displayLarge),
@@ -83,14 +94,23 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       children: [
         Text(title, style: Theme.of(context).textTheme.displayMedium),
         TextFormField(
+          validator: (value) {
+            if ((value != null && value.isNotEmpty) || readOnly) {
+              return null;
+            } else {
+              return "$title is required";
+            }
+          },
           controller: controller,
           decoration: InputDecoration(
-            fillColor: AppColors.deepGrey,
-            filled: true,
+            // fillColor: AppColors.deepGrey,
+            // filled: true,
             hintText: hintText,
             suffixIcon: suffixIcon,
           ),
           readOnly: readOnly,
+          style: TextStyle(color: AppColors.white),
+
         ),
       ],
     );
@@ -99,7 +119,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   IconButton _buildDatePickerButton(TaskCubit taskCubit) {
     return IconButton(
       onPressed: () => taskCubit.changeDate(context),
-      icon: Icon(Icons.calendar_month_rounded, color: AppColors.white),
+      icon: Icon(Icons.calendar_month_rounded),
     );
   }
 
@@ -132,7 +152,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       title,
       suffixIcon: IconButton(
         onPressed: onTap,
-        icon: Icon(Icons.timer_outlined, color: AppColors.white),
+        icon: Icon(Icons.timer_outlined),
       ),
       readOnly: true,
     );
@@ -162,7 +182,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
   Widget _buildColorOption(TaskCubit taskCubit, int index) {
     return GestureDetector(
-      onTap: () => taskCubit.changeColor(index),
+      onTap: () => BlocProvider.of<TaskCubit>(context).changeColor(index),
       child: CircleAvatar(
         backgroundColor: taskCubit.taskColors[index],
         child: taskCubit.selectedColorIndex == index
@@ -172,24 +192,32 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     );
   }
 
-  Widget _buildCreateTaskButton(TaskCubit taskCubit) {
+  Widget _buildCreateTaskButton(TaskCubit taskCubit, state) {
     return SizedBox(
       width: double.infinity,
       height: 50,
-      child: CustomButton(
-        text: AppStrings.createTask,
-        onPressed: () {
-          taskCubit.addTask(
-            TaskModel(
-                title: titleController.text,
-                startTime: taskCubit.startTime,
-                endTime: taskCubit.endTime,
-                note: noteController.text,
-                isCompleted: false,
-                color: taskCubit.selectedColorIndex),
-          );
-        },
-      ),
+      child: state is AddTaskLoading
+          ? Center(child: CircularProgressIndicator())
+          : CustomButton(
+              text: AppStrings.createTask,
+              onPressed: () {
+                if (key.currentState!.validate()) {
+                  taskCubit.addTask(
+                    TaskModel(
+                      title: titleController.text,
+                      startTime: taskCubit.startTime,
+                      endTime: taskCubit.endTime,
+                      note: noteController.text,
+                      isCompleted: 0,
+                      color: taskCubit.selectedColorIndex,
+                      date: DateFormat.yMd().format(
+                          BlocProvider.of<TaskCubit>(context).currentDate),
+                    ),
+                    BlocProvider.of<TaskCubit>(context).selectedDate,
+                  );
+                }
+              },
+            ),
     );
   }
 }

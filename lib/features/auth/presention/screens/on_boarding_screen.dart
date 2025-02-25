@@ -45,9 +45,7 @@ class OnBoardingScreen extends StatelessWidget {
                     },
                     child: Text(
                       AppStrings.skip,
-                      style: Theme.of(context).textTheme.displaySmall!.copyWith(
-                            color: AppColors.white.withAlpha(44),
-                          ),
+                      style: Theme.of(context).textTheme.displaySmall!
                     ),
                   ),
                 ],
@@ -100,8 +98,7 @@ class OnBoardingScreen extends StatelessWidget {
               },
               child: Text(
                 AppStrings.back,
-                style: Theme.of(context).textTheme.displaySmall!.copyWith(
-                    color: AppColors.white.withAlpha(44), fontSize: 16),
+                style: Theme.of(context).textTheme.displaySmall!
               ),
             ),
             index != 2

@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:todo_app/core/DI/get_it.dart';
+import 'package:todo_app/core/database/cache/cache_helper.dart';
+import 'package:todo_app/core/database/sqflite_helper/sqflite_helper.dart';
 import 'package:todo_app/core/utils/app_colors.dart';
 import 'package:todo_app/features/home/data/models/task_model.dart';
 import 'package:todo_app/features/home/logic/cubit/task_state.dart';
 
 class TaskCubit extends Cubit<TaskState> {
   DateTime currentDate = DateTime.now();
+  DateTime selectedDate = DateTime.now();
   String startTime = DateFormat('hh:mm a').format(DateTime.now());
   String endTime = DateFormat('hh:mm a').format(
     DateTime.now().add(
@@ -21,22 +25,9 @@ class TaskCubit extends Cubit<TaskState> {
     AppColors.orange,
     AppColors.purple,
   ];
-  List<TaskModel> tasks = [
-    TaskModel(
-        title: 'Flutter',
-        startTime: "9:33 pm",
-        endTime: "10:00 pm",
-        note: "Learn Dart",
-        isCompleted: false,
-        color: 1),
-    TaskModel(
-        title: 'Flutter',
-        startTime: "10:33 pm",
-        endTime: "11:00 pm",
-        note: "Learn SQLlite",
-        isCompleted: false,
-        color: 3)
-  ];
+  final dbHelper = getIt<SqfLiteHelper>();
+
+  List<TaskModel> tasks = [];
   int selectedColorIndex = 0;
 
   TaskCubit() : super(TaskInitial());
@@ -53,6 +44,12 @@ class TaskCubit extends Cubit<TaskState> {
       emit(ChangeDateSuccess());
     }
     emit(ChangeDateFailed());
+  }
+
+  void changeSelectedDate(date) {
+    selectedDate = date;
+    emit(ChangeSelectedDateSuccess());
+    getTasks(date);
   }
 
   Future<void> changeStartTime(context) async {
@@ -82,10 +79,66 @@ class TaskCubit extends Cubit<TaskState> {
     emit(ChangeColorSuccess());
   }
 
-  addTask(TaskModel task) {
-    tasks.add(task);
-    print("TaskAddedSuccessflly");
-    print(tasks.length);
-    emit(AddTaskSuccess());
+  addTask(TaskModel task, DateTime date) async {
+    emit(AddTaskLoading());
+    try {
+      await dbHelper.insertToDB(task);
+      emit(AddTaskSuccess());
+      getTasks(date);
+    } catch (e) {
+      print("Error in add task $e");
+      emit(AddTaskFalied());
+    }
+  }
+
+  getTasks(date) {
+    emit(GetTasksLoading());
+    try {
+      print("date : $date");
+      dbHelper.getFromDB().then((taskList) {
+        tasks = taskList
+            .map((task) => TaskModel.fromJson(task))
+            .toList()
+            .where((task) {
+          print("task.date ${task.date}");
+          print("selected : ${DateFormat.yMd().format(date)}");
+          return task.date == (DateFormat.yMd().format(date));
+        }).toList();
+        emit(GetTasksSuccess());
+      });
+    } catch (e) {
+      print("Error in get tasks $e");
+      emit(GetTasksFalied());
+    }
+  }
+
+  updateTask(int id, DateTime date) {
+    try {
+      dbHelper.updatedDB(id);
+      getTasks(date);
+    } catch (e) {
+      print("Error in update task $e");
+    }
+  }
+
+  deleteTask(int id, DateTime date) async {
+    try {
+      await dbHelper.deleteFromDB(id);
+      getTasks(date);
+    } catch (e) {
+      print("Error in delete task $e");
+    }
+  }
+
+  bool isDark = false;
+  changeTheme() async {
+    isDark = !isDark;
+    await getIt<CacheHelper>().saveData(key: 'isDark', value: isDark);
+    getTheme();
+  }
+
+  getTheme() {
+    isDark = getIt<CacheHelper>().getData(key: 'isDark') ?? false;
+    emit(GetThemeState());
   }
 }

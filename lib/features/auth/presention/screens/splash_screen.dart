@@ -28,10 +28,7 @@ class SplashScreen extends StatelessWidget {
             Image.asset(AppAssets.logo),
             Text(
               AppStrings.appName,
-              style: GoogleFonts.lato(
-                  color: AppColors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 40),
+              style: Theme.of(context).textTheme.displayLarge,
             ),
           ],
         ),
