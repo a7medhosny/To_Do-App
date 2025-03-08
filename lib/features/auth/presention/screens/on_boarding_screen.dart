@@ -90,6 +90,7 @@ class OnBoardingScreen extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            //back button
             TextButton(
               onPressed: () {
                 controller.previousPage(
@@ -103,6 +104,7 @@ class OnBoardingScreen extends StatelessWidget {
             ),
             index != 2
                 ? ElevatedButton(
+                  //next button
                     onPressed: () {
                       controller.nextPage(
                           duration: const Duration(milliseconds: 1000),
@@ -114,6 +116,7 @@ class OnBoardingScreen extends StatelessWidget {
                       style: TextStyle(color: AppColors.white),
                     ))
                 : ElevatedButton(
+                  //get started button
                     onPressed: () async {
                       await getIt<CacheHelper>()
                           .saveData(key: AppStrings.onBoardingKey, value: true)

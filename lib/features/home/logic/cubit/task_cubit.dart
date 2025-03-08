@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:todo_app/core/DI/get_it.dart';
 import 'package:todo_app/core/database/cache/cache_helper.dart';
 import 'package:todo_app/core/database/sqflite_helper/sqflite_helper.dart';
+import 'package:todo_app/core/services/local_notification_service.dart';
 import 'package:todo_app/core/utils/app_colors.dart';
 import 'package:todo_app/features/home/data/models/task_model.dart';
 import 'package:todo_app/features/home/logic/cubit/task_state.dart';
@@ -17,6 +18,9 @@ class TaskCubit extends Cubit<TaskState> {
       Duration(minutes: 45),
     ),
   );
+  TimeOfDay schduledTime = TimeOfDay(
+      hour: DateTime.now().hour, minute: (DateTime.now().minute + 1) % 60);
+
   List<Color> taskColors = [
     AppColors.red,
     AppColors.green,
@@ -58,8 +62,13 @@ class TaskCubit extends Cubit<TaskState> {
         await showTimePicker(context: context, initialTime: TimeOfDay.now());
     if (selectedendTime != null) {
       startTime = selectedendTime.format(context);
+      schduledTime = selectedendTime;
+
       emit(ChangeStartTimeSuccess());
     }
+    selectedendTime =
+        TimeOfDay(hour: currentDate.hour, minute: currentDate.minute);
+
     emit(ChangeStartTimeFailed());
   }
 
@@ -85,6 +94,10 @@ class TaskCubit extends Cubit<TaskState> {
       await dbHelper.insertToDB(task);
       emit(AddTaskSuccess());
       getTasks(date);
+      LocalNotificationService.showScheduledNotification(
+          taskModel: task,
+          currentDate: currentDate,
+          scheduledTime: schduledTime);
     } catch (e) {
       print("Error in add task $e");
       emit(AddTaskFalied());
@@ -94,14 +107,11 @@ class TaskCubit extends Cubit<TaskState> {
   getTasks(date) {
     emit(GetTasksLoading());
     try {
-      print("date : $date");
       dbHelper.getFromDB().then((taskList) {
         tasks = taskList
             .map((task) => TaskModel.fromJson(task))
             .toList()
             .where((task) {
-          print("task.date ${task.date}");
-          print("selected : ${DateFormat.yMd().format(date)}");
           return task.date == (DateFormat.yMd().format(date));
         }).toList();
         emit(GetTasksSuccess());

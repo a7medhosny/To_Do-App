@@ -35,6 +35,7 @@ class Homescreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
+                        //current date and theme icon
                         DateFormat.yMMMMd().format(DateTime.now()),
                         style: Theme.of(context)
                             .textTheme
@@ -56,6 +57,7 @@ class Homescreen extends StatelessWidget {
                   const SizedBox(
                     height: 12,
                   ),
+                  //today text
                   Text(
                     AppStrings.today,
                     style: Theme.of(context)
@@ -63,6 +65,7 @@ class Homescreen extends StatelessWidget {
                         .displayMedium!
                         .copyWith(fontSize: 24),
                   ),
+                  // Data Picker
                   DatePicker(
                     DateTime.now(),
                     initialSelectedDate: DateTime.now(),
@@ -77,6 +80,7 @@ class Homescreen extends StatelessWidget {
                   const SizedBox(
                     height: 24,
                   ),
+                  // tasks list
                   state is GetTasksLoading
                       ? Center(child: CircularProgressIndicator())
                       : (tasks.isNotEmpty
@@ -241,7 +245,6 @@ _buildTaskComponent(BuildContext context, TaskModel taskModel) {
           ),
         ),
 
-        // استخدام SizedBox بدلاً من Spacer لتجنب مشاكل المساحة
         SizedBox(width: 12),
 
         // Divider
